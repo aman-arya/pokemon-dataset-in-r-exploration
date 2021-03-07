@@ -1,0 +1,622 @@
+---
+title: "Pokemon"
+author: "Aman"
+date: "20/02/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+getwd()
+```
+# <span style="color:black"> Exploring Pokemon dataset: </span>
+
+<div style="padding: 20px; border: 2px solid transparent; border-color: transparent; margin-bottom: 5px; border-radius: 5px; color: white; background-color: #23681f;">
+#### Finding more details about our dataset:
+
+  * Correlations
+  * Normality tests
+  * some intersting patterns 
+  
+#### Finding patterns:
+  I'll be dealing with following Hypothesises
+  
+  * *Hypothesis1:* legenaday pokemons are better ?
+  
+  * *Hypothesis2:* normality check of height , defence and attack 
+  
+  * *Hypothesis3:* hypothesis small pokemon has greater speed ?
+  
+  * *Hypothesis4:* Do Pokemons improve with generations?
+  
+  * *Hypothesis5:* Is Bigger the better, always?
+  
+  
+</div>
+
+## Loading the libraries
+
+ 
+```{r Libraries, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+library(tidyverse)
+library(dplyr)
+library(tidyr)
+library(Hmisc)
+library(ggplot2)
+
+```
+
+# Goal: Using R explore the pokemon dataset
+
+## Importing dataset 
+
+```{r}
+pokemon <- read.csv("pokemon.csv", header = T)
+```
+```{r}
+dim(pokemon)
+```
+This pokemon dataset has  801 rows and 41 cols
+```{r}
+head(pokemon)
+```
+```{r}
+str(pokemon)
+```
+# distribution of pokemon based on type 1 
+
+```{r}
+pokemon %>%
+  group_by(type1) %>%
+  summarise(number = n()) %>%
+  ggplot(aes(x = reorder(type1, number), y = number , fill = type1)) +
+  geom_bar(stat = 'identity') +
+  xlab(label = "Type of Pokemon") +
+  ylab(label = "Number of Pokemon") +
+  ggtitle(label = "Number of Pokemon by Type") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  geom_text(aes(label = number), hjust = -1.0)
+
+```
+
+# distribution of pokemon based on type 2
+
+```{r}
+pokemon %>%
+  filter(type2 != '') %>%
+  group_by(type2) %>%
+  summarise(number = n()) %>%
+  ggplot(aes(x = reorder(type2, number), y = number , fill = type2)) +
+  geom_bar(stat = 'identity') +
+  xlab(label = "Type of Pokemon") +
+  ylab(label = "Number of Pokemon") +
+  ggtitle(label = "Number of Pokemon by Type") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(legend.position="none") +
+  coord_flip() +
+  geom_text(aes(label = number), hjust = -1.0)
+```
+
+
+
+## subset of numeric columns 
+```{r}
+#install.packages("dplyr")
+```
+
+# Subseting the numeric columns
+
+```{r}
+library(dplyr)
+num_pokemon <- select_if(pokemon, is.numeric)
+dim(num_pokemon)
+```
+# subset pokemon with generation
+
+```{r}
+generation1<- pokemon[pokemon$generation== 1,]
+generation2<- pokemon[pokemon$generation== 2,]
+generation3<- pokemon[pokemon$generation== 3,]
+generation4<- pokemon[pokemon$generation== 4,]
+generation5<- pokemon[pokemon$generation== 5,]
+generation6<- pokemon[pokemon$generation== 6,]
+generation7<- pokemon[pokemon$generation== 7,]
+```
+
+# Creating subset of legendary and non legendary pokemons
+```{r}
+is_legendary<- pokemon[pokemon$is_legendary==1, ]
+not_legendary<- pokemon[pokemon$is_legendary==0, ]
+#conveted to data frame 
+legendary <- data.frame(
+ Type = c("Legendary", "Not Legendary"),
+ Numbers = c(nrow(is_legendary), nrow(not_legendary))
+ )
+```
+
+## Pie chat to visualise the pokemon based on legendary (ggplot)
+
+```{r}
+ggplot(legendary, aes(x="", y= Numbers, fill= Type))+ 
+  geom_bar(width = 1, stat = "identity")+
+  coord_polar("y", start=0)+
+  scale_fill_brewer(palette="Blues")+
+  theme_minimal()
+```
+
+
+## Pie chat to visualise the pokemon based on generation
+
+```{r}
+pie <- ggplot(pokemon, aes(x = "", fill = factor(generation))) + 
+  geom_bar(width = 1) +
+  theme(axis.line = element_blank(), 
+        plot.title = element_text(hjust=0.5)) + 
+  labs(fill="generation", 
+       x=NULL, 
+       y=NULL, 
+       title="Pie Chart of Pokemon generation")
+  
+pie + coord_polar(theta = "y") + scale_fill_brewer(palette = "Green")
+```
+
+## Density plot to visualise height of the pokemon based on generation
+
+```{r}
+g <- ggplot(pokemon, aes(height_m))
+g + geom_density(aes(fill=factor(generation))) + 
+    labs(title="Density plot", 
+         x="height",
+         fill="Generations")
+```
+
+## Density plot to visualise attack of the pokemon based on generation
+
+```{r}
+g <- ggplot(pokemon, aes(attack))
+g + geom_density(aes(fill=factor(generation))) + 
+    labs(title="Density plot", 
+         x="attack",
+         fill="Generations")
+```
+
+
+## Density plot to visualise base happiness offthe pokemon based on generation
+
+```{r}
+g <- ggplot(pokemon, aes(base_happiness))
+g + geom_density(aes(fill=factor(generation))) + 
+    labs(title="Density plot", 
+         x="base happiness",
+         fill="Generations")
+```
+
+
+```{r}
+library(gridExtra)
+library(grid)
+```
+
+```{r}
+density_weight <- ggplot(data=pokemon, aes(weight_kg)) + geom_density(col="white",fill="slateblue1", alpha=0.8) + ggtitle("Density Plot of weight in kg")
+density_height <- ggplot(data=pokemon, aes(height_m)) + geom_density(col="white",fill="darkorchid", alpha=0.8) + ggtitle("Density Plot of Height in meters")
+density_generation <- ggplot(data=pokemon, aes(generation)) + geom_density(col="white",fill="mediumturquoise", alpha=0.8) + ggtitle("Density Plot of generations of pokemons")
+density_legendary <- ggplot(data=pokemon, aes(is_legendary)) + geom_density(col="white",fill="orange", alpha=0.8) + ggtitle("Density Plot of legenndary pokemons")
+grid.arrange(density_weight, density_height, density_generation, density_legendary)
+```
+
+
+
+```{r}
+#install.packages("plotrix")
+```
+
+# Subset dataset into 3 categories based on height 
+```{r}
+small <- na.omit(num_pokemon[num_pokemon$height_m <=0.7, ])
+mid <- na.omit(num_pokemon[num_pokemon$height_m >0.7 & pokemon$height_m <=1.4, ])
+big <- na.omit(num_pokemon[num_pokemon$height_m >1.4, ])
+```
+# normality check of hieght of pokemon
+
+```{r}
+hist(pokemon$height_m, col = "#13b54f")
+```
+```{r}
+#quntile quantile plot
+qqnorm(pokemon$height_m, col = "#13b54f")
+#qqline for normal distribution
+qqline(pokemon$height_m,col='red')
+```
+
+
+### <span style="color:grey"> Checking normality </span>
+
+First we will perform **Shapiro-Wilk Normality Test** to check whether the height of the pokemon has normal distribution. 
+
+  * Null Hypothesis, $H_0 :=$ height is normally distributed
+  * Alternate Hypothesis, $H_a :=$ height is **NOT** normally distributed
+
+```{r}
+#normaltiy test 
+shapiro.test(pokemon$height_m)
+```
+p value is soo low , so we can reject null hypothesis , hence distribution is not normal
+
+### <span style="color:grey"> Checking normality for defence of pokemon </span>
+
+First we will perform **Shapiro-Wilk Normality Test** to check whether the attack of the pokemon has normal distribution. 
+
+  * Null Hypothesis, $H_0 :=$ defense is normally distributed
+  * Alternate Hypothesis, $H_a :=$ defense is **NOT** normally distributed
+```{r}
+shapiro.test(pokemon$defense)
+```
+```{r}
+hist(pokemon$defense, col = "#13b54f")
+```
+
+```{r}
+#quntile quantile plot
+qqnorm(pokemon$defense, col = "#13b54f")
+#qqline for normal distribution
+qqline(pokemon$defense,col='red')
+```
+
+### <span style="color:grey"> Checking normality for attack of pokemon </span>
+
+First we will perform **Shapiro-Wilk Normality Test** to check whether the attack of the pokemon has normal distribution. 
+
+  * Null Hypothesis, $H_0 :=$ attack is normally distributed
+  * Alternate Hypothesis, $H_a :=$ attack is **NOT** normally distributed
+```{r}
+shapiro.test(pokemon$attack)
+```
+```{r}
+hist(pokemon$attack, col = "#13b54f")
+```
+
+```{r}
+#quntile quantile plot
+qqnorm(pokemon$attack, col = "#13b54f")
+#qqline for normal distribution
+qqline(pokemon$attack,col='red')
+```
+
+For each type of height and attack we have the p-value less than 0.05. Hence, we reject our Null Hypothesis (that the data vectors are normally distributed) and conclude that the set of mean values forheight and attack of pokemon is not normally distributed. Thus we cannot use **t test** or **ANOVA** to compare means of our datasets. 
+
+Now we will need a non parametric test to compare the means of our datasets pairwise. We will use **Wilcoxon test** to compare the mean. 
+
+# Wilcoxon test between defense and attack of pokemon:
+
+  * Null Hypothesis, $H_0 :=$ The difference between median value of defense and attack of pokemon is zero.
+  * Alternate Hypothesis, $H_a :=$ The difference between median value of defense and attack of pokemon is less than zero
+  
+```{r}
+wilcox.test(pokemon$defense,pokemon$attack
+            ,paired=TRUE,alternative = "less")
+```
+Since we get the p-value is less than 0.05 hence we reject our Null hypothesis and get that **median value of defense and attack of pokemon is less than zero.**
+```{r}
+boxplot(pokemon$defense,pokemon$attack
+        , col = c("#007cff","#13b54f"))
+```
+
+# correlation in attack and defence for pokemon
+
+```{r}
+plot(pokemon$attack, pokemon$defense, main="Attack vs Defence", xlab = "Attack", ylab = "Defence", xlim = c(0, max(pokemon$attack)), ylim= c(0, max(pokemon$defense)), col="#13b54f")
+
+```
+```{r}
+cor.test(pokemon$defense,pokemon$attack)
+```
+The attact and defence of pokemon are a bit correlated 
+
+
+
+### box plot for attack and base total of the pokemon
+
+
+```{r}
+boxplot(pokemon$base_total,pokemon$attack, col = c("#007cff","#13b54f"))
+```
+
+## corelation btw attavck and base total
+
+```{r}
+plot(pokemon$attack, pokemon$base_total, main="Attack vs base_total", xlab = "Attack", ylab = "base_total", xlim = c(0, max(pokemon$attack)), ylim= c(0, max(pokemon$base_total)), col="#5122b1")
+```
+
+```{r}
+cor.test(pokemon$attack, pokemon$base_total)
+```
+The attack and base_total of pokemon are correlated 
+
+
+# histogram plot for all feature vector of pokemon
+
+```{r}
+hist.data.frame(num_pokemon, col = c("#007cff","#13b54f"))
+```
+
+# hypothesis small pokemon has greater speed
+
+```{r}
+boxplot(as.numeric(small$speed), as.numeric(mid$speed), as.numeric(big$speed),col = "#a7f562", main="Size vs speed Rate", names = c("Small Pokemon", "Medium Pokemon", "Big Pokemon"), xlab="Pokemon Size", ylab="speed")
+```
+
+
+so the speed of big and medium pokemon has greater speed hence my hypothesis is wrong
+
+## normality testing
+
+```{r}
+par(mfrow=c(2,2))
+hist(as.numeric(small$speed), main = "Small Pokemon", col = "#a7f562", xlab = "speed")
+hist(as.numeric(mid$speed), main = "Medium Pokemon", col = "#a7f562", xlab = "speed")
+hist(as.numeric(big$speed), main = "Large Pokemon", col = "#a7f562", xlab = "speed")
+hist(rnorm(5000,mean=500,sd=50), main = "Normal Control",  col="#A6B91A", xlab = "Normal function")
+```
+
+```{r}
+par(mfrow=c(2,2))
+qqnorm(as.numeric(small$speed), col = "#a7f562", main = "Small pokemon" )
+qqline(as.numeric(small$speed))
+
+qqnorm(as.numeric(mid$speed), col="#a7f562", main = "Medium Pokemon")
+qqline(as.numeric(mid$speed))
+
+qqnorm(as.numeric(big$speed), col = "#a7f562", main = "Big pokemon")
+qqline(as.numeric(big$speed))
+
+qqnorm(rnorm(5000,mean=500,sd=50),  col="#A6B91A", main = "Normal Function")
+qqline(rnorm(5000,mean=500,sd=50), col= "red")
+```
+
+### shaphiro test 
+
+First we will perform **Shapiro-Wilk Normality Test** to check whether the height of the pokemon has normal distribution. 
+
+  * Null Hypothesis, $H_0 :=$ height is normally distributed
+  * Alternate Hypothesis, $H_a :=$ height is **NOT** normally distributed
+
+```{r}
+shapiro.test(small$speed)
+```
+```{r}
+shapiro.test(mid$speed)
+```
+```{r}
+shapiro.test(big$speed)
+```
+ * small pokemon is not normally distributed 
+ * mid  pokemon is not normally distributed 
+ * big pokemon is not normally distributed 
+
+
+### mean compare with medium and big pokemon 
+
+
+For each type of height and attack we have the p-value less than 0.05. Hence, we reject our Null Hypothesis (that the data vectors are normally distributed) and conclude that the set of mean values forheight and attack of pokemon is not normally distributed. Thus we cannot use **t test** or **ANOVA** to compare means of our datasets. 
+
+Now we will need a non parametric test to compare the means of our datasets pairwise. We will use **Wilcoxon test** to compare the mean. 
+
+# Wilcoxon test between defense and attack of pokemon:
+
+  * Null Hypothesis, $H_0 :=$ The difference between median value of speed of mid and speed of big is zero.
+  * Alternate Hypothesis, $H_a :=$ The difference between median value of speed of mid and speed of big is less than zero
+
+
+```{r}
+wilcox.test(big$speed, mid$speed)
+```
+
+* there is small difference in median of big and mid pokemon speed
+
+# hypothesis attact increase with generation
+
+```{r}
+boxplot(as.numeric(generation1$attack), as.numeric(generation2$attack), as.numeric(generation3$attack),as.numeric(generation4$attack), as.numeric(generation5$attack), as.numeric(generation6$attack), as.numeric(generation7$attack),col = "#a7f562", main="generation vs attack", names = c("generation 1","generation 2","generation 3","generation 4","generation 5","generation 6","generation 7" ), xlab="generation", ylab="attack")
+```
+
+* we cant see any good varation of attack with increase in generation 
+
+## kuskal test 
+
+```{r}
+kruskal.test(pokemon$generation~pokemon$attack)
+```
+* note here p value is very less which implies there is significantly no difference in attach with increase in generations 
+
+```{r}
+par(mfrow=c(1,1))
+boxplot(pokemon$base_total~pokemon$generation, main="Base total vs Generation", xlab = "Generation", ylab = "Basetotal", col= "#a7f562")
+boxplot(pokemon$attack~pokemon$generation, main="Attack vs Generation", xlab = "Generation", ylab = "Attack", col= "#a7f562")
+boxplot(pokemon$defense~pokemon$generation, main="Defence vs Generation", xlab = "Generation", ylab = "Defence", col= "#a7f562")
+boxplot(pokemon$weight_kg~pokemon$generation, main="Weight vs Generation", xlab = "Generation", ylab = "Weight", col= "#a7f562")
+```
+
+
+
+
+```{r}
+par(mfrow=c(2,4))
+hist(as.numeric(generation1$attack), main = "generation 1", col = "#a7f562", xlab = "attack")
+
+hist(as.numeric(generation2$attack), main = "generation 2", col = "#a7f562", xlab = "attack")
+
+hist(as.numeric(generation3$attack), main = "generation 3", col = "#a7f562", xlab = "attack")
+
+hist(as.numeric(generation4$attack), main = "generation 4", col = "#a7f562", xlab = "attack")
+
+hist(as.numeric(generation5$attack), main = "generation 5", col = "#a7f562", xlab = "attack")
+
+hist(as.numeric(generation6$attack), main = "generation 6", col = "#a7f562", xlab = "attack")
+
+hist(as.numeric(generation7$attack), main = "generation 7", col = "#a7f562", xlab = "attack")
+
+hist(rnorm(5000,mean=500,sd=50), main = "Normal Control",  col="#A6B91A", xlab = "Normal function")
+```
+```{r}
+par(mfrow=c(2,4))
+qqnorm(generation1$attack, col = "#8BC3B6", main = "generation 1" )
+qqline(generation1$attack)
+
+qqnorm(generation2$attack, col = "#8BC3B6", main = "generation 2" )
+qqline(generation2$attack)
+
+qqnorm(generation3$attack, col = "#8BC3B6", main = "generation 3" )
+qqline(generation3$attack)
+
+qqnorm(generation4$attack, col = "#8BC3B6", main = "generation 4" )
+qqline(generation4$attack)
+
+qqnorm(generation5$attack, col = "#8BC3B6", main = "generation 5" )
+qqline(generation5$attack)
+
+qqnorm(generation6$attack, col = "#8BC3B6", main = "generation 6" )
+qqline(generation6$attack)
+
+qqnorm(generation7$attack, col = "#8BC3B6", main = "generation 7" )
+qqline(generation7$attack)
+
+qqnorm(rnorm(5000,mean=500,sd=50),  col="#A6B91A", main = "Normal Function")
+qqline(rnorm(5000,mean=500,sd=50), col= "red")
+```
+
+### shaphiro test 
+
+First we will perform **Shapiro-Wilk Normality Test** to check whether the attack of the pokemon has normal distribution in each generation. 
+
+  * Null Hypothesis, $H_0 :=$ attack is normally distributed
+  * Alternate Hypothesis, $H_a :=$ attack is **NOT** normally distributed
+
+```{r}
+shapiro.test(generation1$attack)
+```
+```{r}
+shapiro.test(generation2$attack)
+```
+
+```{r}
+shapiro.test(generation3$attack)
+```
+
+```{r}
+shapiro.test(generation4$attack)
+```
+
+```{r}
+shapiro.test(generation5$attack)
+```
+
+```{r}
+shapiro.test(generation6$attack)
+```
+
+```{r}
+shapiro.test(generation7$attack)
+```
+* attack of generation 1 is normally distributed 
+* attack of generation 2 is not normally distributed 
+* attack of generation 3 is not normally distributed 
+* attack of generation 4 is normally distributed 
+* attack of generation 5 is not normally distributed 
+* attack of generation 6 is not normally distributed 
+* attack of generation 7 is not normally distributed 
+
+
+# hypothesis correlation in size with attack and defence 
+
+
+
+```{r}
+boxplot(as.numeric(small$attack), as.numeric(mid$attack), as.numeric(big$attack),col = "#a7f562", main="Size vs attack", names = c("Small Pokemon", "Medium Pokemon", "Big Pokemon"), xlab="Pokemon Size", ylab="attack")
+```
+
+
+* bigger pokemon has more attack
+
+```{r}
+boxplot(as.numeric(small$defense), as.numeric(mid$defense), as.numeric(big$defense),col = "#a7f562", main="Size vs defence", names = c("Small Pokemon", "Medium Pokemon", "Big Pokemon"), xlab="Pokemon Size", ylab="defence")
+```
+
+
+* bigger pokemon has more defense
+
+## Wilcoxon test
+*Null Hypothesis:* median of attack of Big pokemons is equal to mid.
+*Alternate Hypothesis:* median of attack of Big pokemons is greaterthan mid.
+
+```{r}
+wilcox.test(mid$attack ,big$attack ,alternative = "greater")
+```
+
+* attack of big pokemon is more
+
+
+## Wilcoxon test
+*Null Hypothesis:* median of defense of Big pokemons is equal to mid.
+*Alternate Hypothesis:* median of defense of Big pokemons is greater than mid.
+
+```{r}
+wilcox.test(mid$defense ,big$defense ,alternative = "greater")
+```
+* defence of big pokemon is more
+
+```{r}
+par(mfrow=c(2,2))
+
+plot(small$height_m, small$base_total,col="#8BC3B6", ylim = c(0, max(pokemon$base_total)), xlim = c(0, 5), , xlab = "Height", ylab = "Base Total", main = "Height vs Base Total")
+points(mid$height_m, mid$base_total, col="#A6B91A")
+points(big$height_m, big$base_total, col="#705746")
+legend(3.5, 200, legend=c("Small pokemons", "Medium pokemon", "Big pokemon"),
+       col=c("#8BC3B6", "#A6B91A","#705746"), lty=1:2, cex=0.8)
+
+plot(small$height_m, small$attack,col="#8BC3B6", ylim = c(0, max(pokemon$attack)), xlim = c(0, 5), xlab = "Height", ylab = "Attck", main = "Height vs Attack")
+points(mid$height_m, mid$attack, col="#A6B91A")
+points(big$height_m, big$attack, col="#705746")
+legend(3.5, 40, legend=c("Small pokemons", "Medium pokemon", "Big pokemon"),
+       col=c("#8BC3B6", "#A6B91A","#705746"), lty=1:2, cex=0.8)
+
+plot(small$height_m, small$defense ,col="#8BC3B6", ylim = c(0, max(pokemon$attack)), xlim = c(0, 5),, xlab = "Height", ylab = "Defence", main = "Height vs Defence")
+points(mid$height_m, mid$defense, col="#A6B91A")
+points(big$height_m, big$defense, col="#705746")
+legend(3.5, 40, legend=c("Small pokemons", "Medium pokemon", "Big pokemon"),
+       col=c("#8BC3B6", "#A6B91A","#705746"), lty=1:2, cex=0.8)
+
+
+plot(small$height_m, small$weight_kg,col="#8BC3B6", ylim = c(0, max(pokemon$attack)), xlim = c(0, 5), xlab = "Height", ylab = "Weight in Kg", main = "Height vs Weight")
+points(mid$height_m, mid$weight_kg, col="#A6B91A")
+points(big$height_m, big$weight_kg, col="#705746")
+legend(3.5, 40, legend=c("Small pokemons", "Medium pokemon", "Big pokemon"),
+       col=c("#8BC3B6", "#A6B91A","#705746"), lty=1:2, cex=0.8)
+```
+
+
+## correlation test 
+
+```{r}
+cor.test(pokemon$height_m, pokemon$attack)
+```
+
+
+```{r}
+cor.test(pokemon$height_m, pokemon$weight_kg)
+```
+
+```{r}
+cor.test(pokemon$height_m, pokemon$defense)
+```
+
+```{r}
+cor.test(pokemon$height_m, pokemon$base_total)
+```
+
+* Cor Values are positive for all the data so we can say With Increase in height Base total, Attack, Defence and Weight also increases
